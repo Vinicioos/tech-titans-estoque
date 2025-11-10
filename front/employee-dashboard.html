@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tech Titans - Dashboard Funcionário</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="employee-dashboard.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="employee-dashboard-container">
+        <div class="employee-header">
+            <div class="header-left">
+                <h1>BEM VINDO, FUNCIONÁRIO!</h1>
+                <p id="companyInfo">Empresa: Carregando...</p>
+            </div>
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </button>
+        </div>
+
+        <div class="employee-section">
+            <h2>Suas Opções Disponíveis</h2>
+            
+            <div class="employee-grid">
+                <!-- Botão 1: Visualizar Estoque -->
+                <div class="employee-card" onclick="openViewStock()">
+                    <div class="card-icon">
+                        <i class="fas fa-boxes"></i>
+                    </div>
+                    <h3>Visualizar Estoque</h3>
+                    <p>Ver todos os produtos em estoque da empresa</p>
+                </div>
+
+                <!-- Botão 2: Adicionar Produtos -->
+                <div class="employee-card" onclick="openAddProducts()">
+                    <div class="card-icon">
+                        <i class="fas fa-plus-circle"></i>
+                    </div>
+                    <h3>Adicionar Produtos</h3>
+                    <p>Colocar novos produtos no estoque</p>
+                </div>
+            </div>
+
+            <div class="restricted-info">
+                <div class="info-card">
+                    <i class="fas fa-info-circle"></i>
+                    <h4>Acesso Limitado</h4>
+                    <p>Como funcionário, você tem acesso apenas às funcionalidades de estoque. Para gerenciar funcionários ou empresas, entre em contato com o chefe.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="employee-dashboard.js"></script>
+</body>
+</html>

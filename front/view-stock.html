@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tech Titans - Visualizar Estoque</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="view-stock.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="view-stock-container">
+        <div class="stock-header">
+            <div class="header-left">
+                <button class="back-btn" onclick="goBack()">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </button>
+                <div class="company-info">
+                    <h1 id="companyName">Visualizar Estoque</h1>
+                    <p class="company-subtitle">Gerencie os produtos em estoque</p>
+                </div>
+            </div>
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </button>
+        </div>
+
+        <div class="stock-section">
+            <!-- Barra de busca -->
+            <div class="search-container">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input
+                        type="text"
+                        id="searchInput"
+                        placeholder="Digite o nome do produto para buscar..."
+                        onkeyup="searchProducts()"
+                    />
+                </div>
+                <button class="clear-search-btn" onclick="clearSearch()" id="clearSearchBtn" style="display: none;">
+                    <i class="fas fa-times"></i> Limpar
+                </button>
+            </div>
+
+            <!-- Estatísticas do estoque -->
+            <div class="stock-stats" id="stockStats">
+                <div class="stat-card">
+                    <i class="fas fa-boxes"></i>
+                    <div class="stat-info">
+                        <h3 id="totalProducts">0</h3>
+                        <p>Total de Produtos</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-cubes"></i>
+                    <div class="stat-info">
+                        <h3 id="totalQuantity">0</h3>
+                        <p>Total em Estoque</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-dollar-sign"></i>
+                    <div class="stat-info">
+                        <h3 id="totalValue">R$ 0,00</h3>
+                        <p>Valor Total</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de produtos -->
+            <div class="products-container">
+                <div class="products-header">
+                    <h2>Produtos em Estoque</h2>
+                    <button class="refresh-btn" onclick="loadProducts()">
+                        <i class="fas fa-sync-alt"></i> Atualizar
+                    </button>
+                </div>
+                
+                <div class="products-list" id="productsList">
+                    <div class="loading" id="loadingList">
+                        <i class="fas fa-spinner fa-spin"></i> Carregando produtos...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para editar produto -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Editar Produto</h3>
+                <button class="close-btn" onclick="closeEditModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="editProductForm">
+                    <input type="hidden" id="editProductId" />
+                    
+                    <div class="form-group">
+                        <label for="editProductName">Nome do Produto</label>
+                        <input
+                            type="text"
+                            id="editProductName"
+                            name="name"
+                            placeholder="Digite o nome do produto"
+                            maxlength="100"
+                            required
+                        />
+                        <span class="error-message" id="editNameError"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editProductQuantity">Quantidade</label>
+                        <input
+                            type="number"
+                            id="editProductQuantity"
+                            name="quantity"
+                            placeholder="Digite a quantidade"
+                            min="0"
+                            step="1"
+                            required
+                        />
+                        <span class="error-message" id="editQuantityError"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editProductValue">Valor (R$)</label>
+                        <input
+                            type="number"
+                            id="editProductValue"
+                            name="value"
+                            placeholder="Digite o valor do produto"
+                            min="0"
+                            step="0.01"
+                            required
+                        />
+                        <span class="error-message" id="editValueError"></span>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-delete" onclick="deleteProduct()">
+                    <i class="fas fa-trash"></i> Excluir
+                </button>
+                <div class="modal-actions">
+                    <button class="btn-cancel" onclick="closeEditModal()">Cancelar</button>
+                    <button class="btn-save" onclick="saveProduct()">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="view-stock.js"></script>
+</body>
+</html>

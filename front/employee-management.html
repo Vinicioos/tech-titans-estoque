@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tech Titans - Gerenciamento de Funcionários</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="employee-management.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="employee-management-container">
+        <div class="employee-header">
+            <div class="header-left">
+                <button class="back-btn" onclick="goBack()">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </button>
+                <div class="company-info">
+                    <h1 id="companyName">Gerenciamento de Funcionários</h1>
+                    <p class="company-subtitle">Funcionários desta empresa</p>
+                </div>
+            </div>
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </button>
+        </div>
+
+        <div class="employee-section">
+            <!-- Abas de navegação -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="showTab('create')" id="createTab">
+                    <i class="fas fa-user-plus"></i> Cadastrar Funcionário
+                </button>
+                <button class="tab-btn" onclick="showTab('list')" id="listTab">
+                    <i class="fas fa-list"></i> Visualizar Funcionários
+                </button>
+                <button class="tab-btn" onclick="showTab('delete')" id="deleteTab">
+                    <i class="fas fa-user-minus"></i> Excluir Funcionário
+                </button>
+            </div>
+
+            <!-- Aba: Cadastrar Funcionário -->
+            <div class="tab-content active" id="createContent">
+                <div class="form-container">
+                    <h2>Cadastrar Novo Funcionário</h2>
+                    <form id="createEmployeeForm">
+                        <div class="form-group">
+                            <label for="employeeCpf">CPF</label>
+                            <input
+                                type="text"
+                                id="employeeCpf"
+                                name="cpf"
+                                placeholder="000.000.000-00"
+                                maxlength="14"
+                                required
+                            />
+                            <span class="error-message" id="cpfError"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="employeePassword">Senha</label>
+                            <input
+                                type="password"
+                                id="employeePassword"
+                                name="password"
+                                placeholder="Digite a senha do funcionário"
+                                required
+                            />
+                            <span class="error-message" id="passwordError"></span>
+                        </div>
+
+                        <button type="submit" class="btn-primary" id="createBtn">
+                            <i class="fas fa-user-plus"></i> Cadastrar Funcionário
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Aba: Visualizar Funcionários -->
+            <div class="tab-content" id="listContent">
+                <div class="list-container">
+                    <h2>Funcionários Cadastrados</h2>
+                    <div class="employees-list" id="employeesList">
+                        <div class="loading" id="loadingList">
+                            <i class="fas fa-spinner fa-spin"></i> Carregando funcionários...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aba: Excluir Funcionário -->
+            <div class="tab-content" id="deleteContent">
+                <div class="delete-container">
+                    <h2>Excluir Funcionário</h2>
+                    <form id="deleteEmployeeForm">
+                        <div class="form-group">
+                            <label for="deleteCpf">CPF do Funcionário</label>
+                            <input
+                                type="text"
+                                id="deleteCpf"
+                                name="cpf"
+                                placeholder="000.000.000-00"
+                                maxlength="14"
+                                required
+                            />
+                            <span class="error-message" id="deleteError"></span>
+                        </div>
+
+                        <button type="submit" class="btn-danger" id="deleteBtn">
+                            <i class="fas fa-trash"></i> Excluir Funcionário
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="employee-management.js"></script>
+</body>
+</html>

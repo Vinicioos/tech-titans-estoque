@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Integração - Tech Titans</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste de Integração - Tech Titans</h1>
+    
+    <div class="test-section">
+        <h3>1. Verificar localStorage</h3>
+        <button onclick="checkLocalStorage()">Verificar Dados Salvos</button>
+        <div id="localStorageResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. Testar Backend</h3>
+        <button onclick="testBackend()">Testar Conexão</button>
+        <div id="backendResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. Simular Empresa</h3>
+        <button onclick="simulateCompany()">Criar Empresa de Teste</button>
+        <div id="companyResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>4. Testar Produtos</h3>
+        <button onclick="testProducts()">Testar CRUD de Produtos</button>
+        <div id="productsResult"></div>
+    </div>
+
+    <script>
+        async function checkLocalStorage() {
+            const result = document.getElementById('localStorageResult');
+            const user = localStorage.getItem('user');
+            const company = localStorage.getItem('selectedCompany');
+            const companyIndex = localStorage.getItem('selectedCompanyIndex');
+            
+            let html = '<h4>Dados no localStorage:</h4>';
+            html += `<p><strong>Usuário:</strong> ${user ? 'Logado' : 'Não logado'}</p>`;
+            html += `<p><strong>Empresa:</strong> ${company || 'Nenhuma'}</p>`;
+            html += `<p><strong>Índice da Empresa:</strong> ${companyIndex || 'Nenhum'}</p>`;
+            
+            if (company) {
+                const companyData = JSON.parse(company);
+                html += `<p><strong>ID da Empresa:</strong> ${companyData.id}</p>`;
+                html += `<p><strong>Nome da Empresa:</strong> ${companyData.name}</p>`;
+            }
+            
+            result.innerHTML = html;
+            result.parentElement.className = 'test-section success';
+        }
+        
+        async function testBackend() {
+            const result = document.getElementById('backendResult');
+            result.innerHTML = '<p>Testando conexão...</p>';
+            
+            try {
+                const response = await fetch('http://localhost:5000/health');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    result.innerHTML = '<p>✅ Backend funcionando: ' + data.message + '</p>';
+                    result.parentElement.className = 'test-section success';
+                } else {
+                    result.innerHTML = '<p>❌ Erro no backend: ' + data.message + '</p>';
+                    result.parentElement.className = 'test-section error';
+                }
+            } catch (error) {
+                result.innerHTML = '<p>❌ Erro de conexão: ' + error.message + '</p>';
+                result.parentElement.className = 'test-section error';
+            }
+        }
+        
+        function simulateCompany() {
+            const result = document.getElementById('companyResult');
+            
+            // Simular dados de empresa
+            const testCompany = {
+                id: 1,
+                name: 'Empresa Teste'
+            };
+            
+            localStorage.setItem('selectedCompany', JSON.stringify(testCompany));
+            localStorage.setItem('selectedCompanyIndex', '0');
+            localStorage.setItem('user', JSON.stringify({
+                user_type: 'chefe',
+                name: 'Usuário Teste'
+            }));
+            
+            result.innerHTML = '<p>✅ Empresa de teste criada e salva no localStorage</p>';
+            result.parentElement.className = 'test-section success';
+        }
+        
+        async function testProducts() {
+            const result = document.getElementById('productsResult');
+            result.innerHTML = '<p>Testando produtos...</p>';
+            
+            try {
+                // Testar criação de produto
+                const createResponse = await fetch('http://localhost:5000/products/1', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: 'Produto Teste',
+                        quantity: 10,
+                        value: 25.50
+                    })
+                });
+                
+                const createData = await createResponse.json();
+                
+                if (createResponse.ok) {
+                    result.innerHTML += '<p>✅ Produto criado com sucesso</p>';
+                    
+                    // Testar busca de produtos
+                    const getResponse = await fetch('http://localhost:5000/products/1');
+                    const getData = await getResponse.json();
+                    
+                    if (getResponse.ok) {
+                        result.innerHTML += `<p>✅ Produtos encontrados: ${getData.products.length}</p>`;
+                        result.innerHTML += '<p>📦 Produtos: ' + JSON.stringify(getData.products, null, 2) + '</p>';
+                        result.parentElement.className = 'test-section success';
+                    } else {
+                        result.innerHTML += '<p>❌ Erro ao buscar produtos: ' + getData.message + '</p>';
+                        result.parentElement.className = 'test-section error';
+                    }
+                } else {
+                    result.innerHTML += '<p>❌ Erro ao criar produto: ' + createData.message + '</p>';
+                    result.parentElement.className = 'test-section error';
+                }
+            } catch (error) {
+                result.innerHTML += '<p>❌ Erro: ' + error.message + '</p>';
+                result.parentElement.className = 'test-section error';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tech Titans - Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <div class="header-left">
+                <h1>BEM VINDO, CHEFE!</h1>
+                <p class="access-level">Acesso Completo - Gerencie empresas e funcionários</p>
+            </div>
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </button>
+        </div>
+
+        <div class="companies-section">
+            <h2>Suas Empresas</h2>
+            
+            <div class="companies-grid" id="companiesGrid">
+                <!-- Empresas serão adicionadas dinamicamente aqui -->
+            </div>
+
+            <button class="add-company-btn" id="addCompanyBtn" onclick="addCompany()">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal para editar nome da empresa -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Editar Empresa</h3>
+                <button class="close-btn" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="companyNameInput" placeholder="Nome da empresa" maxlength="50">
+            </div>
+            <div class="modal-footer">
+                <button class="btn-delete" onclick="deleteCompany()">
+                    <i class="fas fa-trash"></i> Excluir
+                </button>
+                <div class="modal-actions">
+                    <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+                    <button class="btn-save" onclick="saveCompanyName()">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

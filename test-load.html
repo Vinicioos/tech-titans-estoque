@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Carregamento - Tech Titans</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .log { background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 5px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste de Carregamento Automático</h1>
+    
+    <div class="test-section">
+        <h3>1. Configurar Dados de Teste</h3>
+        <button onclick="setupTestData()">Configurar Dados</button>
+        <div id="setupResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. Testar Carregamento Automático</h3>
+        <button onclick="testAutoLoad()">Testar Carregamento</button>
+        <div id="autoLoadResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. Testar Carregamento Manual</h3>
+        <button onclick="testManualLoad()">Carregar Manualmente</button>
+        <div id="manualLoadResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>4. Logs de Debug</h3>
+        <div id="debugLogs" class="log"></div>
+    </div>
+
+    <script>
+        let currentCompanyId = null;
+        let debugLogs = [];
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            debugLogs.push(`[${timestamp}] ${message}`);
+            document.getElementById('debugLogs').innerHTML = debugLogs.join('<br>');
+            console.log(message);
+        }
+        
+        function setupTestData() {
+            const result = document.getElementById('setupResult');
+            
+            // Simular dados de empresa
+            const testCompany = {
+                id: 1,
+                name: 'Empresa Teste'
+            };
+            
+            localStorage.setItem('selectedCompany', JSON.stringify(testCompany));
+            localStorage.setItem('selectedCompanyIndex', '0');
+            localStorage.setItem('user', JSON.stringify({
+                user_type: 'chefe',
+                name: 'Usuário Teste'
+            }));
+            
+            currentCompanyId = testCompany.id.toString();
+            
+            log('✅ Dados de teste configurados');
+            log(`📊 ID da empresa: ${currentCompanyId}`);
+            
+            result.innerHTML = '<p>✅ Dados configurados com sucesso</p>';
+            result.parentElement.className = 'test-section success';
+        }
+        
+        async function testAutoLoad() {
+            const result = document.getElementById('autoLoadResult');
+            result.innerHTML = '<p>Testando carregamento automático...</p>';
+            
+            log('🔄 Iniciando teste de carregamento automático');
+            
+            try {
+                const url = `http://localhost:5000/products/${currentCompanyId}`;
+                log(`🌐 Fazendo requisição para: ${url}`);
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                log(`📡 Resposta: ${response.status} - ${JSON.stringify(data)}`);
+                
+                if (response.ok) {
+                    result.innerHTML = `<p>✅ Carregamento automático funcionou! Produtos encontrados: ${data.products.length}</p>`;
+                    result.parentElement.className = 'test-section success';
+                } else {
+                    result.innerHTML = `<p>❌ Erro no carregamento: ${data.message}</p>`;
+                    result.parentElement.className = 'test-section error';
+                }
+            } catch (error) {
+                log(`❌ Erro: ${error.message}`);
+                result.innerHTML = `<p>❌ Erro de conexão: ${error.message}</p>`;
+                result.parentElement.className = 'test-section error';
+            }
+        }
+        
+        async function testManualLoad() {
+            const result = document.getElementById('manualLoadResult');
+            result.innerHTML = '<p>Testando carregamento manual...</p>';
+            
+            log('🔄 Iniciando teste de carregamento manual');
+            
+            // Simular o comportamento do botão "Atualizar"
+            await loadProducts();
+            
+            function loadProducts() {
+                return new Promise(async (resolve) => {
+                    try {
+                        const url = `http://localhost:5000/products/${currentCompanyId}`;
+                        log(`🌐 Carregamento manual para: ${url}`);
+                        
+                        const response = await fetch(url);
+                        const data = await response.json();
+                        
+                        log(`📡 Resposta manual: ${response.status} - ${JSON.stringify(data)}`);
+                        
+                        if (response.ok) {
+                            result.innerHTML = `<p>✅ Carregamento manual funcionou! Produtos: ${data.products.length}</p>`;
+                            result.parentElement.className = 'test-section success';
+                        } else {
+                            result.innerHTML = `<p>❌ Erro no carregamento manual: ${data.message}</p>`;
+                            result.parentElement.className = 'test-section error';
+                        }
+                        resolve();
+                    } catch (error) {
+                        log(`❌ Erro manual: ${error.message}`);
+                        result.innerHTML = `<p>❌ Erro de conexão manual: ${error.message}</p>`;
+                        result.parentElement.className = 'test-section error';
+                        resolve();
+                    }
+                });
+            }
+        }
+        
+        // Auto-configurar dados quando a página carregar
+        window.addEventListener('load', function() {
+            log('🚀 Página carregada, configurando dados automaticamente...');
+            setupTestData();
+        });
+    </script>
+</body>
+</html>

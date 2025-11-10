@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tech Titans - Gerenciamento da Empresa</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="company-management.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="company-management-container">
+        <div class="company-header">
+            <div class="header-left">
+                <button class="back-btn" onclick="goBack()">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </button>
+                <h1 id="companyName">Gerenciamento da Empresa</h1>
+            </div>
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </button>
+        </div>
+
+        <div class="management-section">
+            <h2>O que você deseja fazer?</h2>
+            
+            <div class="management-grid">
+                <!-- Botão 1: Criar Funcionário -->
+                <div class="management-card" onclick="openCreateEmployee()">
+                    <div class="card-icon">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <h3>Criar Funcionário</h3>
+                    <p>Cadastrar novos funcionários para a empresa</p>
+                </div>
+
+                <!-- Botão 2: Visualizar Estoque -->
+                <div class="management-card" onclick="openViewStock()">
+                    <div class="card-icon">
+                        <i class="fas fa-boxes"></i>
+                    </div>
+                    <h3>Visualizar Estoque</h3>
+                    <p>Ver todos os produtos em estoque</p>
+                </div>
+
+                <!-- Botão 3: Adicionar Produtos -->
+                <div class="management-card" onclick="openAddProducts()">
+                    <div class="card-icon">
+                        <i class="fas fa-plus-circle"></i>
+                    </div>
+                    <h3>Adicionar Produtos</h3>
+                    <p>Colocar novos produtos no estoque</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="company-management.js"></script>
+</body>
+</html>

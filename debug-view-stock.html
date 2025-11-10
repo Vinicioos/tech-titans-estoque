@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Visualizar Estoque</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .stock-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .loading i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+        
+        .debug-info {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .debug-info h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        
+        .debug-info pre {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="stock-card">
+            <h1>🔍 Debug - Visualizar Estoque</h1>
+            
+            <div class="debug-info">
+                <h4>📊 Informações de Debug:</h4>
+                <div id="debugInfo">
+                    <p>Carregando informações...</p>
+                </div>
+            </div>
+            
+            <div class="debug-info">
+                <h4>🔄 Teste de Carregamento:</h4>
+                <button onclick="testLoad()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                    Testar Carregamento
+                </button>
+                <div id="testResult" style="margin-top: 10px;"></div>
+            </div>
+            
+            <div class="debug-info">
+                <h4>📦 Produtos:</h4>
+                <div id="productsList">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i> Carregando produtos...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentCompanyId = null;
+        let allProducts = [];
+        
+        // Simular o comportamento da página original
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 DOM carregado');
+            
+            // Simular dados de empresa
+            const testCompany = {
+                id: 1,
+                name: 'Empresa Teste'
+            };
+            
+            localStorage.setItem('selectedCompany', JSON.stringify(testCompany));
+            localStorage.setItem('user', JSON.stringify({
+                user_type: 'chefe',
+                name: 'Usuário Teste'
+            }));
+            
+            // Configurar ID da empresa
+            currentCompanyId = testCompany.id.toString();
+            
+            // Mostrar informações de debug
+            updateDebugInfo();
+            
+            // Carregar produtos automaticamente
+            console.log('🔄 Iniciando carregamento automático...');
+            loadProducts();
+        });
+        
+        function updateDebugInfo() {
+            const debugInfo = document.getElementById('debugInfo');
+            const selectedCompany = JSON.parse(localStorage.getItem('selectedCompany'));
+            const user = JSON.parse(localStorage.getItem('user'));
+            
+            debugInfo.innerHTML = `
+                <pre>
+Empresa Selecionada: ${JSON.stringify(selectedCompany, null, 2)}
+Usuário: ${JSON.stringify(user, null, 2)}
+ID da Empresa: ${currentCompanyId}
+                </pre>
+            `;
+        }
+        
+        async function loadProducts() {
+            const productsList = document.getElementById('productsList');
+            
+            console.log('🔄 Iniciando carregamento de produtos...');
+            console.log('📊 ID da empresa:', currentCompanyId);
+            
+            // Mostrar loading
+            productsList.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Carregando produtos...</div>';
+            
+            try {
+                const url = `http://localhost:5000/products/${currentCompanyId}`;
+                console.log('🌐 Fazendo requisição para:', url);
+                
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                console.log('📡 Resposta do servidor:', response.status, result);
+                
+                if (response.ok) {
+                    allProducts = result.products;
+                    console.log('✅ Produtos carregados:', allProducts.length);
+                    displayProducts(allProducts);
+                } else {
+                    console.log('❌ Erro ao carregar produtos:', result.message);
+                    productsList.innerHTML = `<div class="loading"><i class="fas fa-exclamation-triangle"></i><br>Erro: ${result.message}</div>`;
+                }
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                productsList.innerHTML = `<div class="loading"><i class="fas fa-exclamation-triangle"></i><br>Erro de conexão: ${error.message}</div>`;
+            }
+        }
+        
+        function displayProducts(products) {
+            console.log('🎨 Exibindo produtos:', products.length);
+            
+            const productsList = document.getElementById('productsList');
+            
+            if (products.length === 0) {
+                console.log('📦 Lista vazia - exibindo mensagem de vazio');
+                productsList.innerHTML = `
+                    <div class="loading">
+                        <i class="fas fa-boxes"></i><br>
+                        Nenhum produto encontrado
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '<h3>Produtos Encontrados:</h3>';
+            products.forEach(product => {
+                html += `
+                    <div style="padding: 10px; margin: 5px 0; background: #f8f9fa; border-radius: 5px;">
+                        <strong>${product.name}</strong> - Qtd: ${product.quantity} - R$ ${product.value.toFixed(2)}
+                    </div>
+                `;
+            });
+            
+            productsList.innerHTML = html;
+            console.log('✅ Produtos exibidos na tela');
+        }
+        
+        async function testLoad() {
+            const testResult = document.getElementById('testResult');
+            testResult.innerHTML = '<p>Testando carregamento...</p>';
+            
+            try {
+                await loadProducts();
+                testResult.innerHTML = '<p style="color: green;">✅ Teste concluído - verifique o console e a lista de produtos</p>';
+            } catch (error) {
+                testResult.innerHTML = `<p style="color: red;">❌ Erro no teste: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

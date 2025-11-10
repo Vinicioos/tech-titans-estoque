@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tech Titans - Sistema de Estoque</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>Tech Titans</h1>
+                <p>Sistema de Estoque</p>
+            </div>
+            
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="cpf">CPF</label>
+                    <input
+                        type="text"
+                        id="cpf"
+                        name="cpf"
+                        placeholder="000.000.000-00"
+                        maxlength="14"
+                        required
+                    />
+                    <span class="error-message" id="cpfError"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Senha</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Digite sua senha"
+                        required
+                    />
+                    <span class="error-message" id="passwordError"></span>
+                </div>
+
+                <button type="submit" class="login-button" id="loginButton">
+                    Entrar
+                </button>
+            </form>
+
+            <div class="password-requirements">
+                <h4>Requisitos da senha:</h4>
+                <ul>
+                    <li>Pelo menos uma letra maiúscula</li>
+                    <li>Pelo menos uma letra minúscula</li>
+                    <li>Pelo menos um número</li>
+                    <li>Pelo menos um caractere especial</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
