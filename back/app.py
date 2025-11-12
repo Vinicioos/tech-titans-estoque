@@ -5,15 +5,13 @@ import db_config
 import db_operations
 
 app = Flask(__name__)
-CORS(app)  # Permite requisições do frontend
+CORS(app)  
 
 def validate_cpf(cpf):
-    """Valida se o CPF tem 11 dígitos numéricos"""
     cpf_numbers = re.sub(r'\D', '', cpf)
     return len(cpf_numbers) == 11
 
 def validate_password(password):
-    """Valida se a senha atende aos requisitos"""
     if len(password) < 8:
         return False, "Senha deve ter pelo menos 8 caracteres"
     
@@ -42,21 +40,21 @@ def login():
         cpf = data.get('cpf', '')
         password = data.get('password', '')
         
-        # Validar CPF
+        
         if not validate_cpf(cpf):
             return jsonify({"message": "CPF inválido"}), 400
         
-        # Validar senha
+        
         is_valid_password, password_message = validate_password(password)
         if not is_valid_password:
             return jsonify({"message": password_message}), 400
         
-        # Remover formatação do CPF para busca
+        
         cpf_numbers = re.sub(r'\D', '', cpf)
         
         print(f"🔍 Tentativa de login - CPF: {cpf_numbers}")
         
-        # Buscar usuário (pode ser chefe ou funcionário)
+        
         user = db_operations.get_user_by_cpf(cpf_numbers)
         
         if user:
@@ -71,12 +69,12 @@ def login():
             
             if hash_banco == password_hash:
                 print("✅ Senha correta!")
-                # Verificar tipo de acesso
+                
                 tipo_acesso = user.get('tipo_acesso', '').lower() if user.get('tipo_acesso') else ''
                 id_empresa = user.get('id_empresa')
                 
                 if tipo_acesso == 'chefe' or (not tipo_acesso and id_empresa is None):
-                    # É um chefe
+                    
                     user_data = {
                         'cpf': user['cpf'],
                         'name': user['nome'],
@@ -88,7 +86,7 @@ def login():
                         "user": user_data
                     }), 200
                 elif tipo_acesso == 'funcionario' or id_empresa is not None:
-                    # É um funcionário
+                    
                     if id_empresa is None:
                         print("❌ Funcionário sem empresa associada")
                         return jsonify({"message": "Funcionário sem empresa associada"}), 401
@@ -108,7 +106,7 @@ def login():
         else:
             print(f"❌ Usuário não encontrado no banco para CPF: {cpf_numbers}")
         
-        # Se não encontrou em lugar nenhum
+        
         return jsonify({"message": "CPF ou senha incorretos, tente novamente"}), 401
         
     except Exception as e:
@@ -127,26 +125,26 @@ def register():
         name = data.get('name', '')
         email = data.get('email', '')
         
-        # Validar CPF
+        
         if not validate_cpf(cpf):
             return jsonify({"message": "CPF inválido"}), 400
         
-        # Validar senha
+        
         is_valid_password, password_message = validate_password(password)
         if not is_valid_password:
             return jsonify({"message": password_message}), 400
         
-        # Remover formatação do CPF
+        
         cpf_numbers = re.sub(r'\D', '', cpf)
         
-        # Verificar se usuário já existe
+        
         existing_user = db_operations.get_user_by_cpf(cpf_numbers)
         if existing_user:
             return jsonify({"message": "Usuário já cadastrado"}), 409
         
-        # Criar novo usuário (chefe por padrão)
+        
         password_hash = db_operations.hash_password(password)
-        # id_empresa=None para chefes
+        
         success = db_operations.create_user(cpf_numbers, password_hash, name, email, tipo_acesso='chefe', id_empresa=None)
         
         if success:
@@ -157,7 +155,7 @@ def register():
     except Exception as e:
         return jsonify({"message": f"Erro interno do servidor: {str(e)}"}), 500
 
-# Endpoints para funcionários
+
 @app.route('/employees/<company_id>', methods=['GET'])
 def get_employees(company_id):
     """Buscar todos os funcionários de uma empresa"""
@@ -180,24 +178,24 @@ def create_employee(company_id):
         password = data.get('password', '')
         name = data.get('name', '')
         
-        # Validar CPF
+        
         if not validate_cpf(cpf):
             return jsonify({"message": "CPF inválido"}), 400
         
-        # Validar senha
+        
         is_valid_password, password_message = validate_password(password)
         if not is_valid_password:
             return jsonify({"message": password_message}), 400
         
-        # Remover formatação do CPF
+        
         cpf_numbers = re.sub(r'\D', '', cpf)
         
-        # Verificar se funcionário já existe
+        
         existing_employee = db_operations.get_employee_by_cpf(cpf_numbers, company_id)
         if existing_employee:
             return jsonify({"message": "Funcionário já cadastrado nesta empresa"}), 409
         
-        # Criar novo funcionário
+        
         password_hash = db_operations.hash_password(password)
         success = db_operations.create_employee(cpf_numbers, password_hash, company_id, name)
         
@@ -219,7 +217,7 @@ def create_employee(company_id):
 def delete_employee(company_id, employee_cpf):
     """Excluir funcionário"""
     try:
-        # Remover formatação do CPF
+        
         cpf_numbers = re.sub(r'\D', '', employee_cpf)
         
         success = db_operations.delete_employee(cpf_numbers, company_id)
@@ -243,7 +241,7 @@ def get_company_info(company_id):
                 "name": company.get('name', company.get('nome', f"Empresa {company_id}"))
             }), 200
         else:
-            # Se não encontrar na tabela empresa, retornar apenas o ID
+            
             return jsonify({
                 "id": company_id,
                 "name": f"Empresa {company_id}"
@@ -251,7 +249,7 @@ def get_company_info(company_id):
     except Exception as e:
         return jsonify({"message": f"Erro interno: {str(e)}"}), 500
 
-# Endpoints para produtos
+
 @app.route('/products/<company_id>', methods=['GET'])
 def get_products(company_id):
     """Buscar todos os produtos de uma empresa"""
@@ -275,14 +273,14 @@ def create_product(company_id):
         quantity = data.get('quantity', 0)
         value = data.get('value', 0.0)
         
-        # Validar nome
+        
         if not name:
             return jsonify({"message": "Nome do produto é obrigatório"}), 400
         
         if len(name) > 100:
             return jsonify({"message": "Nome do produto deve ter no máximo 100 caracteres"}), 400
         
-        # Validar quantidade
+        
         try:
             quantity = int(quantity)
             if quantity < 0:
@@ -290,7 +288,7 @@ def create_product(company_id):
         except (ValueError, TypeError):
             return jsonify({"message": "Quantidade deve ser um número válido"}), 400
         
-        # Validar valor
+        
         try:
             value = float(value)
             if value < 0:
@@ -298,11 +296,11 @@ def create_product(company_id):
         except (ValueError, TypeError):
             return jsonify({"message": "Valor deve ser um número válido"}), 400
         
-        # Verificar se já existe um produto com o mesmo nome
+        
         existing_product = db_operations.get_product_by_name(company_id, name)
         
         if existing_product:
-            # Se o produto já existe, somar a quantidade
+            
             old_quantity = existing_product['quantity']
             new_quantity = old_quantity + quantity
             
@@ -322,7 +320,7 @@ def create_product(company_id):
             else:
                 return jsonify({"message": "Erro ao atualizar produto"}), 500
         else:
-            # Se não existe, criar novo produto
+            
             print(f"🔧 Criando novo produto para empresa {company_id}: {name}")
             
             new_product = db_operations.create_product(company_id, name, quantity, value)
@@ -348,12 +346,12 @@ def update_product(company_id, product_id):
         if not data:
             return jsonify({"message": "Dados não fornecidos"}), 400
         
-        # Verificar se produto existe
+        
         product = db_operations.get_product_by_id(company_id, product_id)
         if not product:
             return jsonify({"message": "Produto não encontrado"}), 404
         
-        # Preparar dados para atualização
+        
         name = None
         quantity = None
         value = None
@@ -381,7 +379,7 @@ def update_product(company_id, product_id):
             except (ValueError, TypeError):
                 return jsonify({"message": "Valor deve ser um número válido"}), 400
         
-        # Atualizar produto
+        
         updated_product = db_operations.update_product(company_id, product_id, name, quantity, value)
         
         if updated_product:
@@ -421,7 +419,7 @@ def create_test_user():
         password = "Senha123!"
         name = "Usuário Teste"
         
-        # Verificar se já existe
+        
         existing_user = db_operations.get_user_by_cpf(cpf)
         if existing_user:
             return jsonify({
@@ -430,7 +428,7 @@ def create_test_user():
                 "password": password
             }), 200
         
-        # Criar usuário
+        
         password_hash = db_operations.hash_password(password)
         success = db_operations.create_user(
             cpf, 
@@ -461,13 +459,13 @@ def create_test_user_if_not_exists():
         password = "Senha123!"
         name = "Usuário Teste"
         
-        # Verificar se já existe
+        
         existing_user = db_operations.get_user_by_cpf(cpf)
         if existing_user:
             print(f"✅ Usuário de teste já existe: {existing_user.get('nome', 'N/A')}")
             return
         
-        # Criar usuário
+        
         print("🔧 Criando usuário de teste...")
         password_hash = db_operations.hash_password(password)
         success = db_operations.create_user(
@@ -494,12 +492,12 @@ if __name__ == '__main__':
     print("📱 Frontend: http://localhost:3000 (ou abra o index.html)")
     print("🔧 Backend: http://localhost:5000")
     
-    # Testar conexão com o banco de dados
+    
     print("\n🔌 Testando conexão com PostgreSQL...")
     if db_config.test_connection():
         print("✅ Conexão com banco de dados estabelecida com sucesso!\n")
         
-        # Criar usuário de teste se não existir
+        
         create_test_user_if_not_exists()
         print("\n💡 Usuário de teste: CPF: 123.456.789-01, Senha: Senha123!\n")
     else:
