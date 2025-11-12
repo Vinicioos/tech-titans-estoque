@@ -3,6 +3,319 @@ import psycopg2
 from psycopg2 import sql
 import hashlib
 
+
+def _get_table_columns(table_name):
+    """
+    Retorna a lista de colunas de uma tabela ou lista vazia se não existir.
+    """
+    conn = None
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name = %s
+            ORDER BY ordinal_position;
+            """,
+            (table_name,),
+        )
+        columns = [row[0] for row in cur.fetchall()]
+        cur.close()
+        return columns
+    except psycopg2.Error as e:
+        print(f"Erro ao obter colunas da tabela '{table_name}': {e}")
+        return []
+    finally:
+        if conn:
+            return_connection(conn)
+
+
+def _ensure_funcionarios_table():
+    """
+    Garante a existência de uma tabela 'funcionarios' auxiliar para armazenar vínculos de empresa.
+    """
+    conn = None
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS funcionarios (
+                cpf VARCHAR(14) PRIMARY KEY,
+                nome VARCHAR(100),
+                senha VARCHAR(255),
+                id_empresa INTEGER,
+                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        conn.commit()
+        cur.close()
+    except psycopg2.Error as e:
+        if conn:
+            conn.rollback()
+        print(f"Erro ao garantir tabela funcionarios: {e}")
+    finally:
+        if conn:
+            return_connection(conn)
+
+
+def _detect_column(columns, candidates):
+    """
+    Retorna o primeiro nome de coluna encontrado em `columns` que esteja na lista `candidates`.
+    """
+    for candidate in candidates:
+        if candidate in columns:
+            return candidate
+    return None
+
+
+def _get_company_from_funcionarios(cpf):
+    """
+    Busca o id da empresa na tabela funcionarios para manter compatibilidade com estruturas antigas.
+    """
+    conn = None
+    try:
+        _ensure_funcionarios_table()
+        columns = _get_table_columns("funcionarios")
+        if not columns:
+            return None
+
+        cpf_col = _detect_column(columns, ["cpf", "cpf_funcionario", "cpf_colaborador", "cpf_colab"])
+        empresa_col = _detect_column(columns, ["id_empresa", "empresa_id", "company_id", "idempresa", "empresa"])
+
+        if not cpf_col or not empresa_col:
+            return None
+
+        conn = get_connection()
+        cur = conn.cursor()
+
+        query = (
+            sql.SQL("SELECT {empresa_col} FROM funcionarios WHERE {cpf_col} = %s OR {cpf_col} = %s LIMIT 1")
+            .format(empresa_col=sql.Identifier(empresa_col), cpf_col=sql.Identifier(cpf_col))
+        )
+
+        cpf_clean = cpf.replace(".", "").replace("-", "").strip()
+        cpf_formatted = (
+            f"{cpf_clean[:3]}.{cpf_clean[3:6]}.{cpf_clean[6:9]}-{cpf_clean[9:]}" if len(cpf_clean) == 11 else cpf_clean
+        )
+
+        cur.execute(query, (cpf_clean, cpf_formatted))
+        row = cur.fetchone()
+        cur.close()
+
+        if row and row[0] is not None:
+            return row[0]
+        return None
+    except psycopg2.Error as e:
+        print(f"Erro ao buscar empresa em funcionarios: {e}")
+        return None
+    finally:
+        if conn:
+            return_connection(conn)
+
+
+def _sync_funcionarios_record(cpf, password_hash, company_id, name=None):
+    """
+    Garante que a tabela funcionarios (se existir) receba/atualize o vínculo do funcionário com a empresa.
+    """
+    conn = None
+    try:
+        _ensure_funcionarios_table()
+        columns = _get_table_columns("funcionarios")
+        if not columns:
+            return
+
+        cpf_clean = cpf.replace('.', '').replace('-', '').strip()
+        cpf_col = _detect_column(columns, ["cpf", "cpf_funcionario", "cpf_colaborador", "cpf_colab"])
+        empresa_col = _detect_column(columns, ["id_empresa", "empresa_id", "company_id", "idempresa", "empresa"])
+        senha_col = _detect_column(columns, ["senha", "password_hash", "hash_senha"])
+        nome_col = _detect_column(columns, ["nome", "name"])
+
+        if not cpf_col or not empresa_col:
+            return
+
+        try:
+            empresa_val = int(company_id)
+        except (ValueError, TypeError):
+            empresa_val = company_id
+
+        conn = get_connection()
+        cur = conn.cursor()
+
+        exists_query = (
+            sql.SQL(
+                "SELECT 1 FROM funcionarios WHERE {cpf_col} = %s AND {empresa_col} = %s LIMIT 1"
+            ).format(cpf_col=sql.Identifier(cpf_col), empresa_col=sql.Identifier(empresa_col))
+        )
+        cur.execute(exists_query, (cpf_clean, empresa_val))
+        exists = cur.fetchone()
+
+        if exists:
+            updates = []
+            params = []
+            if senha_col:
+                updates.append(sql.SQL("{col} = %s").format(col=sql.Identifier(senha_col)))
+                params.append(password_hash)
+            if nome_col and name:
+                updates.append(sql.SQL("{col} = %s").format(col=sql.Identifier(nome_col)))
+                params.append(name)
+
+            if updates:
+                params.extend([cpf_clean, empresa_val])
+                update_query = (
+                    sql.SQL("UPDATE funcionarios SET {updates} WHERE {cpf_col} = %s AND {empresa_col} = %s")
+                    .format(
+                        updates=sql.SQL(", ").join(updates),
+                        cpf_col=sql.Identifier(cpf_col),
+                        empresa_col=sql.Identifier(empresa_col),
+                    )
+                )
+                cur.execute(update_query, params)
+        else:
+            insert_cols = [sql.Identifier(cpf_col), sql.Identifier(empresa_col)]
+            values = [cpf_clean, empresa_val]
+            placeholders = [sql.Placeholder(), sql.Placeholder()]
+
+            if senha_col:
+                insert_cols.append(sql.Identifier(senha_col))
+                values.append(password_hash)
+                placeholders.append(sql.Placeholder())
+
+            if nome_col and name:
+                insert_cols.append(sql.Identifier(nome_col))
+                values.append(name)
+                placeholders.append(sql.Placeholder())
+
+            insert_query = (
+                sql.SQL("INSERT INTO funcionarios ({cols}) VALUES ({placeholders})")
+                .format(cols=sql.SQL(", ").join(insert_cols), placeholders=sql.SQL(", ").join(placeholders))
+            )
+            cur.execute(insert_query, values)
+
+        conn.commit()
+        cur.close()
+    except psycopg2.Error as e:
+        if conn:
+            conn.rollback()
+        print(f"Erro ao sincronizar funcionarios: {e}")
+    finally:
+        if conn:
+            return_connection(conn)
+
+
+def _delete_funcionarios_record(cpf, company_id):
+    """
+    Remove o vínculo do funcionário na tabela funcionarios (se existir).
+    """
+    conn = None
+    try:
+        _ensure_funcionarios_table()
+        columns = _get_table_columns("funcionarios")
+        if not columns:
+            return
+
+        cpf_col = _detect_column(columns, ["cpf", "cpf_funcionario", "cpf_colaborador", "cpf_colab"])
+        empresa_col = _detect_column(columns, ["id_empresa", "empresa_id", "company_id", "idempresa", "empresa"])
+
+        if not cpf_col or not empresa_col:
+            return
+
+        try:
+            empresa_val = int(company_id)
+        except (ValueError, TypeError):
+            empresa_val = company_id
+
+        conn = get_connection()
+        cur = conn.cursor()
+        delete_query = (
+            sql.SQL("DELETE FROM funcionarios WHERE {cpf_col} = %s AND {empresa_col} = %s")
+            .format(cpf_col=sql.Identifier(cpf_col), empresa_col=sql.Identifier(empresa_col))
+        )
+        cur.execute(delete_query, (cpf, empresa_val))
+        conn.commit()
+        cur.close()
+    except psycopg2.Error as e:
+        if conn:
+            conn.rollback()
+        print(f"Erro ao remover funcionário da tabela funcionarios: {e}")
+    finally:
+        if conn:
+            return_connection(conn)
+
+
+def _get_employees_from_funcionarios(company_id):
+    """
+    Retorna funcionários a partir da tabela funcionarios para cenários legados.
+    """
+    conn = None
+    try:
+        _ensure_funcionarios_table()
+        columns = _get_table_columns("funcionarios")
+        if not columns:
+            return []
+
+        id_col = _detect_column(columns, ["id", "id_funcionario", "funcionario_id"])
+        cpf_col = _detect_column(columns, ["cpf", "cpf_funcionario", "cpf_colaborador", "cpf_colab"])
+        empresa_col = _detect_column(columns, ["id_empresa", "empresa_id", "company_id", "idempresa", "empresa"])
+        nome_col = _detect_column(columns, ["nome", "name"])
+
+        if not cpf_col or not empresa_col:
+            return []
+
+        try:
+            empresa_val = int(company_id)
+        except (ValueError, TypeError):
+            empresa_val = company_id
+
+        select_parts = []
+        order = []
+
+        if id_col:
+            select_parts.append(sql.Identifier(id_col))
+            order.append("id")
+
+        select_parts.append(sql.Identifier(cpf_col))
+        order.append("cpf")
+
+        select_parts.append(sql.Identifier(empresa_col))
+        order.append("empresa")
+
+        if nome_col:
+            select_parts.append(sql.Identifier(nome_col))
+            order.append("nome")
+
+        conn = get_connection()
+        cur = conn.cursor()
+        query = (
+            sql.SQL("SELECT {cols} FROM funcionarios WHERE {empresa_col} = %s")
+            .format(cols=sql.SQL(", ").join(select_parts), empresa_col=sql.Identifier(empresa_col))
+        )
+        cur.execute(query, (empresa_val,))
+        rows = cur.fetchall()
+        cur.close()
+
+        employees = []
+        for row in rows:
+            data = {key: row[idx] for idx, key in enumerate(order)}
+            employees.append(
+                {
+                    "id": data.get("id"),
+                    "nome": data.get("nome", f"Funcionário {str(data.get('cpf', ''))[:3]}"),
+                    "cpf": str(data.get("cpf", "")),
+                    "id_empresa": str(data.get("empresa")) if data.get("empresa") is not None else None,
+                }
+            )
+        return employees
+    except psycopg2.Error as e:
+        print(f"Erro ao buscar funcionários na tabela funcionarios: {e}")
+        return []
+    finally:
+        if conn:
+            return_connection(conn)
+
 def hash_password(password):
     """Gera hash da senha"""
     return hashlib.sha256(password.encode()).hexdigest()
@@ -90,6 +403,11 @@ def get_user_by_cpf(cpf):
                 user_dict['id_empresa'] = result[idx] if result[idx] else None
             else:
                 user_dict['id_empresa'] = None
+
+            if user_dict.get('id_empresa') is None:
+                fallback_empresa = _get_company_from_funcionarios(cpf_clean)
+                if fallback_empresa is not None:
+                    user_dict['id_empresa'] = fallback_empresa
             
             return user_dict
         return None
@@ -244,13 +562,25 @@ def get_employees_by_company(company_id):
         cur.close()
         
         employees = []
-        for result in results:
-            employees.append({
-                'id': result[0],
-                'nome': result[1],
-                'cpf': result[2],
-                'id_empresa': str(company_id) if id_empresa_col else None
-            })
+        if id_empresa_col:
+            for result in results:
+                employees.append({
+                    'id': result[0],
+                    'nome': result[1],
+                    'cpf': result[2],
+                    'id_empresa': str(company_id_int)
+                })
+        else:
+            legacy_employees = _get_employees_from_funcionarios(company_id)
+            if legacy_employees:
+                return legacy_employees
+            for result in results:
+                employees.append({
+                    'id': result[0],
+                    'nome': result[1],
+                    'cpf': result[2],
+                    'id_empresa': None
+                })
         return employees
     except psycopg2.Error as e:
         print(f"Erro ao buscar funcionários: {e}")
@@ -284,8 +614,19 @@ def create_employee(cpf, password_hash, company_id, name=None):
     except (ValueError, TypeError):
         company_id_int = company_id
     
-    return create_user(cpf, password_hash, name or f"Funcionário {cpf[:3]}", 
-                      tipo_acesso='funcionario', id_empresa=company_id_int)
+    display_name = name or f"Funcionário {cpf[:3]}"
+    success = create_user(
+        cpf,
+        password_hash,
+        display_name,
+        tipo_acesso='funcionario',
+        id_empresa=company_id_int
+    )
+
+    if success:
+        _sync_funcionarios_record(cpf, password_hash, company_id_int, display_name)
+
+    return success
 
 def delete_employee(cpf, company_id):
     """Exclui um funcionário"""
